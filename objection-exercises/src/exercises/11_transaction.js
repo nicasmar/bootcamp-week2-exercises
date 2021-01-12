@@ -1,4 +1,6 @@
 const cleanup = require('../lib/cleanup')
+const User = require('../models/user')
+const Pet = require('../models/pet')
 // Import models
 
 const run = async () => {
@@ -8,7 +10,23 @@ const run = async () => {
     pets. If that total number exceeds 15, it should delete all BIRDS. Test
     the transaction by throwing an error: throw new Error("This is an error").
    */
+    const trans = await User.transaction(async trx => {
+      const nick = await User.query(trx).insert({
+        firstName: 'Nick',
+        lastName: 'Castillo',
+        email: 'nicasmar@gmail.com'
+      })
+      const addPet = await nick.$relatedQuery('pets', trx)
+        .insert({
+          name: "Pop",
+          type: 'DOG'
+        })
+      const total = await Pet.query(trx).resultSize()
 
+      if (total > 15) {
+        const del = await Pet.query(trx).delete().where('type', 'BIRD')
+      } 
+    })
 
   // -----
   cleanup()
